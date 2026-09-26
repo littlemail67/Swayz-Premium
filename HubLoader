@@ -1,3 +1,6 @@
+-- language: Luau, target: Roblox (Medium executor), file: HubLoader.lua
+-- repo: littlemail67/Swayz-Premium
+
 local Library = loadstring(game:HttpGetAsync("https://github.com/ActualMasterOogway/Fluent-Renewed/releases/latest/download/Fluent.luau"))()
 local SaveManager = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/ActualMasterOogway/Fluent-Renewed/master/Addons/SaveManager.luau"))()
 local InterfaceManager = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/ActualMasterOogway/Fluent-Renewed/master/Addons/InterfaceManager.luau"))()
@@ -12,14 +15,18 @@ local StarterGui = game:GetService("StarterGui")
 local HUB_NAME = "Swayz Premium"
 local HUB_VERSION = "v1.0.0"
 local DISCORD_INVITE = "https://discord.gg/eqMMpCWqPB"
+local REPO_ROOT = "https://raw.githubusercontent.com/littlemail67/Swayz-Premium/main/"
 
--- each entry: name shown on the button, and the loadstring url
--- pressing the button: unload hub -> loadstring(url)()
 local SUPPORTED_GAMES = {
     {
         Name = "Operation One",
         Description = "Swayz Premium — Operation One",
-        Script = "https://raw.githubusercontent.com/littlemail67/Swayz-Premium-Operation-One/main/operationonescript",
+        Script = REPO_ROOT .. "operationonescript",
+    },
+    {
+        Name = "Universal Aimbot + ESP",
+        Description = "Keyless advanced aimbot and ESP GUI",
+        Script = "https://rawscripts.net/raw/Universal-Script-Universal-Keyless-Advanced-Aimbot-And-Esp-Gui-90617",
     },
 }
 
@@ -119,16 +126,9 @@ local Tabs = {
     Games  = Window:CreateTab{Title = "Supported Games 🎮", Icon = "phosphor-game-controller-fill"},
 }
 
--- STATUS TAB
 local StatusSection = Tabs.Status:CreateSection("Information")
-StatusSection:CreateParagraph("Welcome", {
-    Title = "👋 " .. LocalPlayer.Name,
-    Content = "Logged in"
-})
-StatusSection:CreateParagraph("Version", {
-    Title = "📌 Version",
-    Content = HUB_VERSION
-})
+StatusSection:CreateParagraph("Welcome", {Title = "👋 " .. LocalPlayer.Name, Content = "Logged in"})
+StatusSection:CreateParagraph("Version", {Title = "📌 Version", Content = HUB_VERSION})
 StatusSection:CreateParagraph("Executor", {
     Title = "💻 Executor",
     Content = (function()
@@ -142,37 +142,21 @@ StatusSection:CreateParagraph("Executor", {
         return "Unknown"
     end)()
 })
-StatusSection:CreateParagraph("Discord", {
-    Title = "💬 Discord",
-    Content = DISCORD_INVITE
-})
+StatusSection:CreateParagraph("Discord", {Title = "💬 Discord", Content = DISCORD_INVITE})
 
 local InfoSection = Tabs.Status:CreateSection("Info")
-InfoSection:CreateParagraph("Unload", {
-    Title = "🧹 Unload",
-    Content = "Run getgenv().SWAYZ_HUB_UNLOAD() in the console"
-})
-InfoSection:CreateParagraph("Loaded Games", {
-    Title = "🎮 Games",
-    Content = tostring(#SUPPORTED_GAMES) .. " available"
-})
+InfoSection:CreateParagraph("Unload", {Title = "🧹 Unload", Content = "getgenv().SWAYZ_HUB_UNLOAD()"})
+InfoSection:CreateParagraph("Loaded Games", {Title = "🎮 Games", Content = tostring(#SUPPORTED_GAMES) .. " available"})
 
--- SUPPORTED GAMES TAB
 local GamesSection = Tabs.Games:CreateSection("Click to Load")
-
 for _, entry in ipairs(SUPPORTED_GAMES) do
     GamesSection:CreateButton({
         Title = "🎮 " .. entry.Name,
         Description = entry.Description or "Load script",
-        Callback = function()
-            loadGameScript(entry)
-        end,
+        Callback = function() loadGameScript(entry) end,
     })
 end
 
--- ============================================================
---                  SAVE MANAGER
--- ============================================================
 SaveManager:SetLibrary(Library)
 InterfaceManager:SetLibrary(Library)
 SaveManager:IgnoreThemeSettings()
