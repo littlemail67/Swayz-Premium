@@ -1,0 +1,193 @@
+local Library = loadstring(game:HttpGetAsync("https://github.com/ActualMasterOogway/Fluent-Renewed/releases/latest/download/Fluent.luau"))()
+local SaveManager = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/ActualMasterOogway/Fluent-Renewed/master/Addons/SaveManager.luau"))()
+local InterfaceManager = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/ActualMasterOogway/Fluent-Renewed/master/Addons/InterfaceManager.luau"))()
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local StarterGui = game:GetService("StarterGui")
+
+-- ============================================================
+--                      CONFIG
+-- ============================================================
+local HUB_NAME = "Swayz Premium"
+local HUB_VERSION = "v1.0.0"
+local DISCORD_INVITE = "https://discord.gg/eqMMpCWqPB"
+
+-- each entry: name shown on the button, and the loadstring url
+-- pressing the button: unload hub -> loadstring(url)()
+local SUPPORTED_GAMES = {
+    {
+        Name = "Operation One",
+        Description = "Swayz Premium — Operation One",
+        Script = "https://raw.githubusercontent.com/littlemail67/Swayz-Premium-Operation-One/main/operationonescript",
+    },
+}
+
+-- ============================================================
+--                  UNLOAD SYSTEM
+-- ============================================================
+local Window
+local connections = {}
+local isUnloaded = false
+
+local function trackConnection(conn)
+    table.insert(connections, conn)
+    return conn
+end
+
+local function notify(title, content, duration)
+    pcall(function()
+        if Library and Library.Notify then
+            Library:Notify{Title = title, Content = content, Duration = duration or 3}
+        end
+    end)
+end
+
+local function unloadHub()
+    if isUnloaded then return end
+    isUnloaded = true
+
+    for _, conn in ipairs(connections) do
+        pcall(function() conn:Disconnect() end)
+    end
+    connections = {}
+
+    if Window then
+        pcall(function() Window:Destroy() end)
+        Window = nil
+    end
+
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = "🧹 " .. HUB_NAME,
+            Text = "Unloaded — loading target script",
+            Duration = 2
+        })
+    end)
+end
+
+getgenv().SWAYZ_HUB_UNLOAD = unloadHub
+
+-- ============================================================
+--                  SCRIPT LOADER
+-- ============================================================
+local function loadGameScript(entry)
+    if not entry or not entry.Script or entry.Script == "" then
+        notify("❌ Missing script", "No URL configured for " .. (entry and entry.Name or "?"), 3)
+        return
+    end
+
+    notify("🔄 Loading", entry.Name .. "...", 2)
+
+    task.wait(0.15)
+    unloadHub()
+    task.wait(0.35)
+
+    local ok, err = pcall(function()
+        loadstring(game:HttpGet(entry.Script))()
+    end)
+
+    if not ok then
+        warn("[" .. HUB_NAME .. "] failed to load " .. entry.Name .. ": " .. tostring(err))
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {
+                Title = "❌ Load Failed",
+                Text = entry.Name .. " — check console",
+                Duration = 4
+            })
+        end)
+    end
+end
+
+-- ============================================================
+--                      GUI
+-- ============================================================
+Window = Library:CreateWindow{
+    Title = HUB_NAME,
+    SubTitle = DISCORD_INVITE,
+    TabWidth = 160,
+    Size = UDim2.fromOffset(560, 400),
+    Resize = true,
+    MinSize = Vector2.new(400, 300),
+    Acrylic = false,
+    Theme = "Rose",
+    MinimizeKey = Enum.KeyCode.RightControl,
+}
+
+local Tabs = {
+    Status = Window:CreateTab{Title = "Status ✅", Icon = "phosphor-seal-check-fill"},
+    Games  = Window:CreateTab{Title = "Supported Games 🎮", Icon = "phosphor-game-controller-fill"},
+}
+
+-- STATUS TAB
+local StatusSection = Tabs.Status:CreateSection("Information")
+StatusSection:CreateParagraph("Welcome", {
+    Title = "👋 " .. LocalPlayer.Name,
+    Content = "Logged in"
+})
+StatusSection:CreateParagraph("Version", {
+    Title = "📌 Version",
+    Content = HUB_VERSION
+})
+StatusSection:CreateParagraph("Executor", {
+    Title = "💻 Executor",
+    Content = (function()
+        if syn and syn.request then return "Synapse X" end
+        if getexecutorname then
+            local ok, name = pcall(getexecutorname)
+            if ok then return name end
+        end
+        if KRNL_LOADED then return "Krnl" end
+        if Delta then return "Delta" end
+        return "Unknown"
+    end)()
+})
+StatusSection:CreateParagraph("Discord", {
+    Title = "💬 Discord",
+    Content = DISCORD_INVITE
+})
+
+local InfoSection = Tabs.Status:CreateSection("Info")
+InfoSection:CreateParagraph("Unload", {
+    Title = "🧹 Unload",
+    Content = "Run getgenv().SWAYZ_HUB_UNLOAD() in the console"
+})
+InfoSection:CreateParagraph("Loaded Games", {
+    Title = "🎮 Games",
+    Content = tostring(#SUPPORTED_GAMES) .. " available"
+})
+
+-- SUPPORTED GAMES TAB
+local GamesSection = Tabs.Games:CreateSection("Click to Load")
+
+for _, entry in ipairs(SUPPORTED_GAMES) do
+    GamesSection:CreateButton({
+        Title = "🎮 " .. entry.Name,
+        Description = entry.Description or "Load script",
+        Callback = function()
+            loadGameScript(entry)
+        end,
+    })
+end
+
+-- ============================================================
+--                  SAVE MANAGER
+-- ============================================================
+SaveManager:SetLibrary(Library)
+InterfaceManager:SetLibrary(Library)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes{}
+InterfaceManager:SetFolder("SwayzHub")
+SaveManager:SetFolder("SwayzHub/configs")
+InterfaceManager:BuildInterfaceSection(Tabs.Status)
+SaveManager:BuildConfigSection(Tabs.Status)
+
+Window:SelectTab(1)
+
+pcall(function()
+    Library:Notify{
+        Title = "💬 " .. HUB_NAME,
+        Content = "Loaded — " .. tostring(#SUPPORTED_GAMES) .. " games available",
+        Duration = 5
+    }
+end)
